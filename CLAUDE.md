@@ -1,12 +1,13 @@
 # Ring-Puzzle-Solver
 
-Web-App zum Loesen des SZ-Buchstabenraetsels (12 Buchstaben im Ring).
+Web-App zum Loesen von Buchstabenring-Raetseln (12 Buchstaben im Ring).
 
 ## Architektur
 
 - **Backend:** FastAPI (`server.py`) + Solver-Modul (`solver.py`)
 - **Frontend:** Vanilla JS/HTML/CSS (`public/`)
 - **Wortliste:** `data/german_words.txt.gz` (~6MB, 1.9M Woerter)
+- **Qualitaetsdaten:** `data/hunspell_lemmas.txt.gz` (744k) + `data/word_frequencies.txt.gz` (50k)
 - **Deploy:** Docker + Caddy auf VPS (`ring.solvingsystems.de`)
 
 ## Entwicklung

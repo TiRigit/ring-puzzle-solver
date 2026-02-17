@@ -229,6 +229,13 @@ def is_likely_base_form(word: str, all_words: set[str]) -> bool:
         if w.endswith(suffix) and w[:-len(suffix)] + "EN" in all_words:
             return False
 
+    # Genitiv-S: FLUCHS→FLUCH, RAUCHS→RAUCH etc.
+    if w.endswith("S") and len(w) > 4 and w[:-1] in all_words:
+        base = w[:-1]
+        # Nur filtern wenn Basis ein Nomen sein koennte (nicht bei Verben wie FUCHS)
+        if base + "ES" in all_words or base + "E" in all_words:
+            return False
+
     return True
 
 
