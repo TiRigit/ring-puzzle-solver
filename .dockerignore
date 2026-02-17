@@ -1,0 +1,11 @@
+.git
+.gitignore
+.env
+*.pyc
+__pycache__
+*.md
+SolvingSystems.html
+ring_puzzle_solver.py
+.dockerignore
+docker-compose*.yml
+Caddyfile

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buchstabenr&auml;tsel-Solver &mdash; Ring-Puzzle l&ouml;sen</title>
+<meta name="description" content="L&ouml;se das SZ-Buchstabenr&auml;tsel: 12 Buchstaben im Ring, finde die Wortkette. Algorithmischer Solver mit Backtracking und Duden-Grundformfilter.">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+
+<h1>Buchstabenr&auml;tsel-Solver</h1>
+<p class="subtitle">12 Buchstaben im Ring &mdash; finde die Wortkette, die alle abdeckt.</p>
+
+<!-- Eingabe -->
+<div class="input-section">
+  <div class="input-row">
+    <div class="input-group" style="flex:2">
+      <label for="letters-input">12 Buchstaben (Reihenfolge = Ring)</label>
+      <input type="text" id="letters-input" maxlength="12" value="RBEMPALZINHY" placeholder="z.B. RBEMPALZINHY" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="input-group" style="flex:1;min-width:120px">
+      <label for="max-words">Max. W&ouml;rter</label>
+      <select id="max-words">
+        <option value="2" selected>2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+      </select>
+    </div>
+    <div class="input-group" style="flex:1;min-width:140px">
+      <label for="preset">Vorlage</label>
+      <select id="preset">
+        <option value="">Eigene Eingabe</option>
+        <option value="RBEMPALZINHY" selected>SZ-R&auml;tsel (RBEMPALZINHY)</option>
+      </select>
+    </div>
+    <button id="solve-btn" class="btn btn-primary">L&ouml;sen</button>
+  </div>
+</div>
+
+<!-- Ring-Visualisierung -->
+<div class="ring-visual">
+  <div id="ring-display"></div>
+</div>
+
+<!-- Loading / Error -->
+<div id="loading" class="loading">
+  <div class="spinner"></div>
+  <span>Solver l&auml;uft &hellip;</span>
+</div>
+<div id="error" class="error"></div>
+
+<!-- Ergebnisse -->
+<div id="results" class="results"></div>
+
+<!-- Ueber dieses Projekt -->
+<div class="about">
+  <h2>Hintergrund</h2>
+  <p>
+    Die S&uuml;ddeutsche Zeitung ver&ouml;ffentlicht regelm&auml;&szlig;ig ein Buchstabenr&auml;tsel: 12 Buchstaben im Kreis, finde eine
+    Kette aus genau zwei W&ouml;rtern, die alle Buchstaben abdeckt. Die Sperr-Regel &mdash; nach jedem Buchstaben sind er selbst und
+    seine Ring-Nachbarn f&uuml;r den n&auml;chsten Buchstaben gesperrt &mdash; macht das Problem &uuml;berraschend komplex.
+  </p>
+  <p>
+    Dieser Solver nutzt Backtracking mit Greedy-Sortierung und Pruning, kombiniert mit einem Beugungsform-Filter, der aus einer
+    1.9-Millionen-Wortliste nur Duden-Grundformen (Nomen, Verben im Infinitiv, Adjektive, Eigennamen) extrahiert.
+  </p>
+  <h3>Regeln</h3>
+  <ul>
+    <li><strong>Mindestens 4 Buchstaben</strong> pro Wort.</li>
+    <li><strong>Sperr-Regel:</strong> Nach Benutzung eines Buchstabens sind er und seine Ring-Nachbarn f&uuml;r den <em>n&auml;chsten</em> Buchstaben gesperrt.</li>
+    <li><strong>Verkettung:</strong> Das n&auml;chste Wort beginnt mit dem letzten Buchstaben des vorherigen.</li>
+    <li><strong>Nur Duden-Grundformen</strong> (inkl. Eigennamen). Keine Plurale, Deklinationen, Konjugationen.</li>
+  </ul>
+</div>
+
+<!-- Footer -->
+<footer>
+  <p>Quelle: <a href="https://www.sueddeutsche.de" target="_blank" rel="noopener">S&uuml;ddeutsche Zeitung</a> &mdash; Buchstabenr&auml;tsel</p>
+  <p>Instruktor: ntrmx00</p>
+  <p>Erstellt unter Verwendung von KI-Werkzeugen (Claude, Anthropic). Angaben gem&auml;&szlig; EU AI Act.</p>
+</footer>
+
+<script src="/app.js"></script>
+</body>
+</html>

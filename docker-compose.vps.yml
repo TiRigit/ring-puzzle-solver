@@ -1,0 +1,15 @@
+services:
+  app:
+    build: .
+    container_name: ring-puzzle
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8081:8080"
+    networks:
+      - proxy
+
+networks:
+  proxy:
+    name: caddy-network
+    external: true
