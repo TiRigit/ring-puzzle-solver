@@ -268,22 +268,42 @@ def is_likely_base_form(word: str, all_words: set[str]) -> bool:
                     or base + "ES" in all_words or base + "E" in all_words):
                 return False
 
-    # Verb-Konjugation 3. Person: -T → Infinitiv -EN
+    # Verb-Konjugation 3. Person -T
     if w.endswith("T") and len(w) > 5:
-        # Regulaer: ZANKT→ZANKEN, TANKT→TANKEN
-        if w[:-1] + "EN" in all_words:
-            return False
-        # Starke Verben mit I→E Ablaut: ZERBRICHT→ZERBRECHEN, SPRICHT→SPRECHEN
         stem = w[:-1]
+        # Regulaer: ZANKT→ZANKEN
+        if stem + "EN" in all_words:
+            return False
+        # -ET: RECHNET→RECHNEN
+        if stem.endswith("E") and stem[:-1] + "EN" in all_words:
+            return False
+        # Starke Verben mit I→E Ablaut: ZERBRICHT→ZERBRECHEN
         if "I" in stem:
             idx = stem.rfind("I")
             alt_stem = stem[:idx] + "E" + stem[idx + 1:]
             if alt_stem + "EN" in all_words:
                 return False
 
+    # Verb-Konjugation 2. Person -ST (nur laengere Woerter, schuetzt DIENST/HERBST/KUNST)
+    if w.endswith("ST") and len(w) > 7:
+        stem = w[:-2]
+        if stem + "EN" in all_words:
+            return False
+        # -EST: AUFWENDEST→AUFWENDEN, FINDEST→FINDEN
+        if stem.endswith("E") and stem[:-1] + "EN" in all_words:
+            return False
+
     # Kontrahierte Formen: GLUCKRE→GLUCKERN, WANDRE→WANDERN
     if w.endswith("RE") and len(w) > 5 and w[:-2] + "ERN" in all_words:
         return False
+
+    # Partizip Praesens: AUFWEISEND→AUFWEISEN, WANDERND→WANDERN
+    if w.endswith("D") and len(w) > 6:
+        base = w[:-1]  # AUFWEISEN, WANDERN
+        if base.endswith("EN") and base in all_words:
+            return False
+        if base.endswith("N") and base in all_words:
+            return False
 
     return True
 
