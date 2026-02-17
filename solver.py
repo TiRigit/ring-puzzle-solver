@@ -236,6 +236,19 @@ def is_likely_base_form(word: str, all_words: set[str]) -> bool:
         if base + "ES" in all_words or base + "E" in all_words:
             return False
 
+    # Verb-Konjugation 3. Person: -T → Infinitiv -EN
+    if w.endswith("T") and len(w) > 5:
+        # Regulaer: ZANKT→ZANKEN, TANKT→TANKEN
+        if w[:-1] + "EN" in all_words:
+            return False
+        # Starke Verben mit I→E Ablaut: ZERBRICHT→ZERBRECHEN, SPRICHT→SPRECHEN
+        stem = w[:-1]
+        if "I" in stem:
+            idx = stem.rfind("I")
+            alt_stem = stem[:idx] + "E" + stem[idx + 1:]
+            if alt_stem + "EN" in all_words:
+                return False
+
     return True
 
 
@@ -282,7 +295,9 @@ def find_valid_words(ring_data: dict, raw_words: set[str], apply_filter: bool = 
             valid.add(word)
 
     if apply_filter:
-        valid = {w for w in valid if is_likely_base_form(w, valid)}
+        # Pruefe gegen volle Wortliste, nicht nur ring-valide Woerter
+        # (Infinitiv ZERBRECHEN muss gefunden werden, auch wenn nicht ring-valid)
+        valid = {w for w in valid if is_likely_base_form(w, raw_words)}
 
     return valid
 
