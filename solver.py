@@ -9,6 +9,91 @@ import os
 from typing import Optional
 
 
+# --- Wortqualitaets-Daten (einmal laden, global cachen) ---
+
+_hunspell_lemmas: Optional[set[str]] = None
+_word_frequencies: Optional[dict[str, int]] = None
+
+
+def _get_data_dir() -> str:
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+
+
+def load_hunspell_lemmas() -> set[str]:
+    """Laedt Hunspell-Lemmata als Whitelist (uppercase)."""
+    global _hunspell_lemmas
+    if _hunspell_lemmas is not None:
+        return _hunspell_lemmas
+
+    _hunspell_lemmas = set()
+    for ext in [".txt.gz", ".txt"]:
+        filepath = os.path.join(_get_data_dir(), f"hunspell_lemmas{ext}")
+        if not os.path.exists(filepath):
+            continue
+        opener = gzip.open if ext.endswith(".gz") else open
+        with opener(filepath, "rt", encoding="utf-8") as f:
+            for line in f:
+                word = line.strip()
+                if word:
+                    _hunspell_lemmas.add(word.upper())
+        break
+    return _hunspell_lemmas
+
+
+def load_word_frequencies() -> dict[str, int]:
+    """Laedt Wortfrequenzen (uppercase -> frequency)."""
+    global _word_frequencies
+    if _word_frequencies is not None:
+        return _word_frequencies
+
+    _word_frequencies = {}
+    for ext in [".txt.gz", ".txt"]:
+        filepath = os.path.join(_get_data_dir(), f"word_frequencies{ext}")
+        if not os.path.exists(filepath):
+            continue
+        opener = gzip.open if ext.endswith(".gz") else open
+        with opener(filepath, "rt", encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) >= 2:
+                    word = parts[0].upper()
+                    try:
+                        freq = int(parts[1])
+                    except ValueError:
+                        continue
+                    _word_frequencies[word] = freq
+        break
+    return _word_frequencies
+
+
+def word_quality_score(word: str) -> tuple[int, int, int]:
+    """
+    Sortier-Score fuer ein Wort. Niedrigere Werte = bessere Qualitaet.
+    Returns (tier, neg_frequency, length):
+      tier 0 = Hunspell + haeufig
+      tier 1 = Hunspell oder haeufig (Freq > 50)
+      tier 2 = In Frequenzliste (aber selten) oder nur Hunspell
+      tier 3 = Weder Hunspell noch Frequenz (unbekannt)
+    """
+    hunspell = load_hunspell_lemmas()
+    freqs = load_word_frequencies()
+
+    w = word.upper()
+    in_hunspell = w in hunspell
+    freq = freqs.get(w, 0)
+
+    if in_hunspell and freq > 50:
+        tier = 0
+    elif in_hunspell or freq > 50:
+        tier = 1
+    elif freq > 0:
+        tier = 2
+    else:
+        tier = 3
+
+    return (tier, -freq, len(w))
+
+
 def build_ring(letters: str) -> dict:
     """
     Baut Ring-Datenstruktur aus einem 12-Buchstaben-String.
@@ -214,9 +299,9 @@ def solve(ring_data: dict, words: set[str], max_words: int = 2) -> list[dict]:
     for w in words:
         by_start.setdefault(w[0], []).append(w)
 
-    # Sortiere nach Laenge aufsteigend (kuerzere, gebraeuchlichere Woerter zuerst)
+    # Sortiere nach Qualitaet: Hunspell+haeufig > Hunspell > Rest, dann Laenge
     for key in by_start:
-        by_start[key].sort(key=len)
+        by_start[key].sort(key=word_quality_score)
 
     perfect_solutions: list[list[str]] = []
     best_imperfect: list[list[str]] = []
@@ -272,8 +357,15 @@ def solve(ring_data: dict, words: set[str], max_words: int = 2) -> list[dict]:
     # Perfekte Loesungen bevorzugen, nach Gesamtlaenge sortieren
     solutions = perfect_solutions if perfect_solutions else best_imperfect
 
-    # Sortiere: kuerzere Gesamtlaenge zuerst (gebraeuchlichere Woerter)
-    solutions.sort(key=lambda chain: sum(len(w) for w in chain))
+    # Sortiere nach Gesamtqualitaet: Summe der Tier-Scores, dann Frequenz
+    def chain_quality(chain):
+        scores = [word_quality_score(w) for w in chain]
+        total_tier = sum(s[0] for s in scores)
+        total_neg_freq = sum(s[1] for s in scores)
+        total_len = sum(s[2] for s in scores)
+        return (total_tier, total_neg_freq, total_len)
+
+    solutions.sort(key=chain_quality)
 
     results = []
     for chain in solutions:
