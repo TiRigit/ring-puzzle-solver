@@ -66,13 +66,34 @@ def load_word_frequencies() -> dict[str, int]:
     return _word_frequencies
 
 
+def _is_known_compound(word: str, hunspell: set[str]) -> bool:
+    """Prueft ob ein Wort ein Kompositum aus bekannten Teilen ist."""
+    w = word.upper()
+    # Versuche alle Splits: mindestens 3 Buchstaben pro Teil
+    for i in range(3, len(w) - 2):
+        left = w[:i]
+        right = w[i:]
+        if left in hunspell and right in hunspell:
+            return True
+        # Fugen-S: NASENBEIN → NASEN+BEIN (NASEN als Plural in Hunspell)
+        if left.endswith("S") and left[:-1] in hunspell and right in hunspell:
+            return True
+        # Fugen-N: SONNENSCHEIN → SONNEN+SCHEIN
+        if left.endswith("N") and left[:-1] in hunspell and right in hunspell:
+            return True
+        # Fugen-EN: STRAHLENBÜNDEL → STRAHLEN+BÜNDEL
+        if left.endswith("EN") and left[:-2] in hunspell and right in hunspell:
+            return True
+    return False
+
+
 def word_quality_score(word: str) -> tuple[int, int, int]:
     """
     Sortier-Score fuer ein Wort. Niedrigere Werte = bessere Qualitaet.
     Returns (tier, neg_frequency, length):
       tier 0 = Hunspell + haeufig
-      tier 1 = Hunspell oder haeufig (Freq > 50)
-      tier 2 = In Frequenzliste (aber selten) oder nur Hunspell
+      tier 1 = Hunspell oder haeufig (Freq > 50) oder bekanntes Kompositum
+      tier 2 = In Frequenzliste (aber selten)
       tier 3 = Weder Hunspell noch Frequenz (unbekannt)
     """
     hunspell = load_hunspell_lemmas()
@@ -86,7 +107,7 @@ def word_quality_score(word: str) -> tuple[int, int, int]:
         tier = 0
     elif in_hunspell or freq > 50:
         tier = 1
-    elif freq > 0:
+    elif freq > 0 or _is_known_compound(w, hunspell):
         tier = 2
     else:
         tier = 3
@@ -229,12 +250,23 @@ def is_likely_base_form(word: str, all_words: set[str]) -> bool:
         if w.endswith(suffix) and w[:-len(suffix)] + "EN" in all_words:
             return False
 
-    # Genitiv-S: FLUCHS→FLUCH, RAUCHS→RAUCH etc.
-    if w.endswith("S") and len(w) > 4 and w[:-1] in all_words:
-        base = w[:-1]
-        # Nur filtern wenn Basis ein Nomen sein koennte (nicht bei Verben wie FUCHS)
-        if base + "ES" in all_words or base + "E" in all_words:
-            return False
+    # Genitiv/Plural-S: BECKENBAUERS→BECKENBAUER, KAISERS→KAISER etc.
+    if w.endswith("S") and len(w) > 5 and w[:-1] in all_words:
+        return False
+
+    # -ES Genitiv: KREISES→KREIS, ALBERNES→ALBERN
+    if w.endswith("ES") and len(w) > 5 and w[:-2] in all_words:
+        return False
+
+    # Adjektiv-Deklination: NEBELREICHER→NEBELREICH, UNREINEN→UNREIN
+    for suffix in ["ER", "EN", "EM"]:
+        if w.endswith(suffix) and len(w) > 6 and w[:-len(suffix)] in all_words:
+            base = w[:-len(suffix)]
+            # Nur wenn Basis ein Adjektiv sein koennte (nicht KINDER→KIND etc.)
+            # Pruefe: Basis + andere Adj-Endungen existieren auch
+            if (base + "ER" in all_words or base + "EN" in all_words
+                    or base + "ES" in all_words or base + "E" in all_words):
+                return False
 
     # Verb-Konjugation 3. Person: -T → Infinitiv -EN
     if w.endswith("T") and len(w) > 5:
@@ -248,6 +280,10 @@ def is_likely_base_form(word: str, all_words: set[str]) -> bool:
             alt_stem = stem[:idx] + "E" + stem[idx + 1:]
             if alt_stem + "EN" in all_words:
                 return False
+
+    # Kontrahierte Formen: GLUCKRE→GLUCKERN, WANDRE→WANDERN
+    if w.endswith("RE") and len(w) > 5 and w[:-2] + "ERN" in all_words:
+        return False
 
     return True
 
