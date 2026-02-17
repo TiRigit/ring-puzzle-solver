@@ -11,5 +11,5 @@ services:
 
 networks:
   proxy:
-    name: caddy-network
+    name: genossenschafts-portal_proxy
     external: true

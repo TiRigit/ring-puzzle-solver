@@ -1,9 +1,6 @@
+# Ring-Puzzle-Solver
 ring.solvingsystems.de {
+    import security_headers
     reverse_proxy ring-puzzle:8080
     encode gzip
-    header {
-        X-Content-Type-Options nosniff
-        X-Frame-Options DENY
-        Referrer-Policy strict-origin-when-cross-origin
-    }
 }
