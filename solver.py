@@ -204,6 +204,8 @@ def solve(ring_data: dict, words: set[str], max_words: int = 2) -> list[dict]:
     """
     Backtracking-Solver. Gibt Liste von Loesungen zurueck.
     Jede Loesung: {"chain": [...], "covered": [...], "coverage": int}
+    Sammelt alle 12/12-Loesungen (max 500) und sortiert nach Gesamtlaenge
+    (kuerzere Woerter = gebraeuchlicher).
     """
     ring = ring_data["ring"]
     ring_set = ring_data["ring_set"]
@@ -212,27 +214,30 @@ def solve(ring_data: dict, words: set[str], max_words: int = 2) -> list[dict]:
     for w in words:
         by_start.setdefault(w[0], []).append(w)
 
+    # Sortiere nach Laenge aufsteigend (kuerzere, gebraeuchlichere Woerter zuerst)
     for key in by_start:
-        by_start[key].sort(key=lambda w: len(letters_used(w, ring_set)), reverse=True)
+        by_start[key].sort(key=len)
 
-    best_solutions: list[list[str]] = []
+    perfect_solutions: list[list[str]] = []
+    best_imperfect: list[list[str]] = []
     best_coverage = 0
+    max_perfect = 500
 
     def backtrack(chain: list[str], covered: set[str], depth: int):
-        nonlocal best_solutions, best_coverage
+        nonlocal best_imperfect, best_coverage
 
         coverage = len(covered)
 
-        if coverage > best_coverage:
-            best_coverage = coverage
-            best_solutions = [list(chain)]
-        elif coverage == best_coverage and chain:
-            best_solutions.append(list(chain))
-
-        if coverage == 12:
+        if coverage == 12 and chain:
+            perfect_solutions.append(list(chain))
             return
 
         if depth >= max_words:
+            if coverage > best_coverage:
+                best_coverage = coverage
+                best_imperfect = [list(chain)]
+            elif coverage == best_coverage and chain:
+                best_imperfect.append(list(chain))
             return
 
         if chain:
@@ -249,7 +254,7 @@ def solve(ring_data: dict, words: set[str], max_words: int = 2) -> list[dict]:
                 backtrack(chain, covered | letters_used(word, ring_set), depth + 1)
                 chain.pop()
 
-                if best_coverage == 12 and len(best_solutions) >= 10:
+                if len(perfect_solutions) >= max_perfect:
                     return
         else:
             for start_letter in ring:
@@ -259,13 +264,19 @@ def solve(ring_data: dict, words: set[str], max_words: int = 2) -> list[dict]:
                     chain.append(word)
                     backtrack(chain, covered | letters_used(word, ring_set), depth + 1)
                     chain.pop()
-                    if best_coverage == 12 and len(best_solutions) >= 10:
+                    if len(perfect_solutions) >= max_perfect:
                         return
 
     backtrack([], set(), 0)
 
+    # Perfekte Loesungen bevorzugen, nach Gesamtlaenge sortieren
+    solutions = perfect_solutions if perfect_solutions else best_imperfect
+
+    # Sortiere: kuerzere Gesamtlaenge zuerst (gebraeuchlichere Woerter)
+    solutions.sort(key=lambda chain: sum(len(w) for w in chain))
+
     results = []
-    for chain in best_solutions:
+    for chain in solutions:
         covered = set()
         for w in chain:
             covered |= letters_used(w, ring_set)
