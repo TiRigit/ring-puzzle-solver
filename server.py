@@ -32,11 +32,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Ring-Puzzle-Solver", lifespan=lifespan)
 
+ALLOWED_ORIGINS = [
+    "https://ring.solvingsystems.de",
+    "http://localhost:8080",
+    "http://127.0.0.1:8080",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 
