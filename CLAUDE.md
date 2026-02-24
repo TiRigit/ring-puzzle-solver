@@ -1,16 +1,16 @@
-# Ring-Puzzle-Solver
+# Ring Puzzle Solver
 
-Web-App zum Loesen von Buchstabenring-Raetseln (12 Buchstaben im Ring).
+Web app for solving letter ring puzzles (12 letters in a ring).
 
-## Architektur
+## Architecture
 
-- **Backend:** FastAPI (`server.py`) + Solver-Modul (`solver.py`)
+- **Backend:** FastAPI (`server.py`) + solver module (`solver.py`)
 - **Frontend:** Vanilla JS/HTML/CSS (`public/`)
-- **Wortliste:** `data/german_words.txt.gz` (~6MB, 1.9M Woerter)
-- **Qualitaetsdaten:** `data/hunspell_lemmas.txt.gz` (744k) + `data/word_frequencies.txt.gz` (50k)
-- **Deploy:** Docker + Caddy auf VPS (`ring.solvingsystems.de`)
+- **Word list:** `data/german_words.txt.gz` (~6MB, 1.9M words)
+- **Quality data:** `data/hunspell_lemmas.txt.gz` (744k) + `data/word_frequencies.txt.gz` (50k)
+- **Deploy:** Docker + Caddy on VPS (`ring.solvingsystems.de`)
 
-## Entwicklung
+## Development
 
 ```bash
 pip install -r requirements.txt
